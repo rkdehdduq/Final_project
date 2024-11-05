@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column; /* 세로 방향으로 정렬 */
+        }
+
+        .fundad {
+            position: absolute;
+            top: 60px;
+            color: #007bff;
+            font-size: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center; /* 중앙 정렬 */
+        }
+
+        .container {
+            width: 400px;
+            background-color: #444;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h2 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 90%;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .button-container {
+            text-align: center;
+        }
+
+        /* Style for "투자성향파악하기" button to resemble input fields */
+        .assessment-button {
+            width: 95%; /* Increased width to 100% for a longer button */
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #666;
+            color: white;
+            cursor: pointer;
+        }
+
+        .assessment-button:hover {
+            background-color: #666;
+        }
+
+        /* Style for "Sign Up" button */
+        .signup-button {
+            width: 70%;
+            padding: 8px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .signup-button:hover {
+            background-color: #0056b3;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .login-link a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* 팝업 스타일 추가 */
+        .popup-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+
+        .popup-content {
+            position: relative;
+            width: 90%;
+            height: 90%;
+            margin: 2% auto;
+            background-color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .close-popup {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+
+<div class="fundad" onclick="location.href='/'">FundAd</div> <!-- FundAd 텍스트 추가 -->
+<div class="container">
+    <h2>Create an Account</h2>
+    <form id="signup-form">
+        <label for="fullname">Full Name</label>
+        <input type="text" id="fullname" placeholder="Enter your full name">
+        
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="Enter your email">
+        
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Choose a username">
+        
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Choose a password">
+        
+        <!-- 투자성향 결과를 표시할 div 추가 -->
+        <div id="risk-level-result" style="margin-bottom: 15px; color: #007bff; display: none;"></div>
+
+        <!-- "투자성향파악하기" button with input-like style -->
+        <div class="button-container">
+            <button type="button" class="assessment-button">투자성향파악하기</button>
+        </div>
+
+        <!-- "Sign Up" button with original style -->
+        <div class="button-container">
+            <button type="submit" class="signup-button">Sign Up</button>
+        </div>
+    </form>
+    
+    <div class="login-link">
+        <a href="/">Already have an account? Login</a>
+    </div>
+</div>
+
+<!-- 팝업을 위한 iframe 컨테이너 추가 -->
+<div id="testPopup" class="popup-container" style="display: none;">
+    <div class="popup-content">
+        <span class="close-popup">&times;</span>
+        <iframe id="testFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+</div>
+
+<script>
+    let age;
+    const RISK_LEVEL_MAPPING = {
+        "안정형 (Stable)": 5,
+        "안정추구형 (Stable Seeking)": 4,
+        "위험 중립형 (Risk Neutral)": 3,
+        "적극 투자형 (Aggressive Investor)": 2,
+        "공격투자형 (Aggressive Investor)": 1
+    };
+    // iframe에서 메시지를 받는 이벤트 리스너 추가
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'riskLevelText') {
+            const riskLevelDiv = document.getElementById('risk-level-result');
+            riskLevelDiv.textContent = `투자성향: ${event.data.riskLevelText}`;
+            riskLevelDiv.style.display = 'block';
+            document.getElementById('testPopup').style.display = 'none';
+            age = event.data.age;
+        } 
+    });
+
+    document.getElementById('signup-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const fullname = document.getElementById('fullname').value;
+        const email = document.getElementById('email').value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        // 투자성향 결과값 가져오기
+        const riskLevelText = document.getElementById('risk-level-result').textContent.replace('투자성향: ', '');
+        const riskLevel = RISK_LEVEL_MAPPING[riskLevelText] || null; // 매핑된 숫자값으로 변환
+
+        const data = { 
+            fullname, 
+            email, 
+            username, 
+            password,
+            riskLevel,  // 투자성향 데이터 추가
+            riskLevelText,
+            age
+        };
+
+        try {
+            const response = await fetch('/api/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert(result.message);
+                window.location.href = '/';  // 성공 시 '/'로 리다이렉트
+            } else {
+                alert(result.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+
+    document.querySelector('.assessment-button').addEventListener('click', function() {
+        const popup = document.getElementById('testPopup');
+        const frame = document.getElementById('testFrame');
+        frame.src = '/test';
+        popup.style.display = 'block';
+    });
+
+    // 팝업 닫기 버튼 이벤트
+    document.querySelector('.close-popup').addEventListener('click', function() {
+        document.getElementById('testPopup').style.display = 'none';
+    });
+
+    // ESC 키로 팝업 닫기
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            document.getElementById('testPopup').style.display = 'none';
+        }
+    });
+
+
+</script>
+
+</body>
+</html>

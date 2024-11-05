@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FundAd Chatbot</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* 공통 스타일 */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column; /* 세로 방향으로 배치 */
+            flex-grow: 1;
+            transition: margin-left 0.5s;
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            border: 1px solid #333;
+            background-color: #333;
+            overflow-y: auto;
+            max-height: calc(100vh - 120px);
+            transition: width 0.5s;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .chat-container::-webkit-scrollbar {
+            width: 10px
+        }
+
+        .header {
+ 
+            padding: 10px;
+            color: #007bff;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            margin-left: 40px;
+            margin-top : 0px;
+
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 60%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: white;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: #555;
+            color: white;
+        }
+
+        .chat-input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #333;
+            justify-content: center;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chat-input {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #222;
+            border-radius: 5px;
+            background-color: #222;
+            color: white;
+            max-width: 800px;
+            margin-right: 10px;
+            width: calc(100% - 120px);
+            
+            
+        }
+
+        .send-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .send-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* 스피너 및 이미지 */
+        #fundImage {
+            max-width: 400px;
+            max-height: 300px;
+            display: none;
+        }
+
+        #response {
+            margin-top: 20px;
+        }
+
+        #loadingSpinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto; /* 변경된 부분 */
+}
+
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            background-color: #222;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+        }
+
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #818181;
+            display: block;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover {
+            color: #f1f1f1;
+        }
+
+        .sidebar .settings-link {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            width: 100%;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 36px;
+            color: white;
+        }
+
+        .slide-btn {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #007bff;
+        }
+
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            width: 300px;
+            border: 1px solid #333;
+        }
+
+        .settings-modal h2 {
+            margin: 0;
+            margin-bottom: 15px;
+            font-size: 20px;
+            color: #007bff;
+        }
+
+        .settings-modal label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .settings-modal select, .settings-modal input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .settings-modal button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .settings-modal button:hover {
+            background-color: #0056b3;
+        }
+
+        .modal-background {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        /* 기본 스타일 */
+        #fundImage {
+            cursor: pointer; /* 마우스 커서를 포인터로 변경 */
+            max-width: 100%; /* 기본 이미지 크기 조정 */
+            height: auto;
+        }
+        
+        /* 확대 이미지 스타일 */
+        #overlay {
+            display: none; /* 기본적으로 숨김 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); /* 배경을 어둡게 */
+            justify-content: center;
+            align-items: center;
+        }
+
+        #enlargedImage {
+            max-width: 80%; /* 확대 이미지 크기 */
+            max-height: 80%;
+        }
+        /* controls-container 스타일 추가 */
+        .controls-container {
+            
+            display: flex;
+            padding: 10px;
+            background-color: #333;
+            border-top: 1px solid #333;
+            
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .logout-btn {
+            background-color: #007bff !important; /* 어두운 빨간색 */
+            color: white !important;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background-color: #a93226 !important; /* 어두운 빨간색의 더 어두운 색상 */
+        }
+
+        /* 팝업 스타일 추가 */
+        .popup-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+
+        .popup-content {
+            position: relative;
+            width: 90%;
+            height: 90%;
+            margin: 2% auto;
+            background-color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .close-popup {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .close-popup-black {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            color: black;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        /* 계정 정보 모달 스타일 */
+        .settings-modal {
+            z-index: 1000; /* 팝업보다 낮은 z-index 설정 */
+        }
+
+        /* Style for "투자성향파악하기" button to resemble input fields */
+        .assessment-button {
+            width: 95%; /* Increased width to 100% for a longer button */
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #666;
+            color: white;
+            cursor: pointer;
+        }
+
+        .assessment-button:hover {
+            background-color: #666;
+        }
+    </style>
+</head>
+<body>
+
+
+<!-- 새로운  테이너 추가 -->
+<div class="controls-container">
+    <a href="/index" class="header" style="text-decoration: none; color: #007bff;" id="fundad-link">FundAd</a>
+    <div class="slide-btn" onclick="openSidebar()">&#9776;</div>
+
+    <!-- 슬라이드바 내부 컨텐츠  -->
+    <div id="sidebar" class="sidebar">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeSidebar()">&times;</a>
+        <a href="#" class="settings-link" style="margin-bottom: 40px; margin-left: 1px;" onclick="openAccountModal()">👤 Account</a>
+        <a href="#" class="settings-link" onclick="openSettings()">⚙️ Settings</a>
+    </div>
+</div>
+<div class="main">
+    <!--채팅 표시됨 --> 
+    <div class="chat-container" id="chat-container">
+        <img id="fundImage" src="" alt="Pie Chart">
+    </div>
+
+    <!-- 확대된 이미지를 보여줄 오버레이 -->
+    <div id="overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); justify-content: center; align-items: center;">
+        <img id="enlargedImage" src="" alt="Enlarged Image" style="max-width: 80%; max-height: 80%;">
+    </div>
+    <!-- 로딩 스피너 -->
+    <div id="loadingSpinner"></div>
+	<!-- 히트맵 출력 버튼-->
+	<div style="text-align: center;  color: #a93226; text-decoration: underline; margin-top: 15px;" id="hitmap-button">히트맵 확인하기</div>
+    <!-- 채팅 입력 --> 
+    <div class="chat-input-container">
+        <input type="text" id="chat-input" class="chat-input" placeholder="히트맵에서 섹터를 골라 질문하세요" />
+        <button class="send-btn" id="sendBtn">보내기</button>
+    </div>
+</div>
+
+
+<!-- 환경 설정 모달 -->
+<div class="modal-background" id="modal-background"></div>
+<div class="settings-modal" id="settings-modal">
+    <h2>Settings</h2>
+    
+    <label for="dark-mode-toggle">
+        Dark Mode: 
+        <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode()" />
+    </label>
+
+    <label for="font-size-select">Font Size:</label>
+    <select id="font-size-select" onchange="changeFontSize()">
+        <option value="14px">Small</option>
+        <option value="16px" selected>Medium</option>
+        <option value="18px">Large</option>
+        <option value="20px">Extra Large</option>
+    </select>
+
+    <label for="theme-color-input">Theme Color:</label>
+    <input type="color" id="theme-color-input" value="#007bff" onchange="changeThemeColor()" />
+
+    <button onclick="closeSettings()">Close</button>
+</div>
+
+<!-- 계정 정보 모달 -->
+<div class="modal-background" id="account-modal-background" style="display: none;"></div>
+<div class="settings-modal" id="account-modal" style="display: none;">
+    <a href="javascript:void(0)" class="close-btn" onclick="closeAccountModal()" style="position: absolute; top: 10px; right: 10px; font-size: 24px; color: white; text-decoration: none;">&times;</a>
+    <h2>Account Information</h2>
+    <p>Username: <span id="account-username"></span></p>
+    <p>Email: <span id="account-email"></span></p>
+    <p>Risk Level: <span id="account-risk-Level"></span></p>
+    <button class ="assessment-button">투자성향 재검사</button>
+    <button class="logout-btn" onclick="logout()">로그아웃</button>
+    
+</div>
+
+<!-- 모달 배경 -->
+<div class="modal-background" id="modal-background" style="display: none;">
+    <div class="modal-content" id="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+    </div>
+</div>
+<!-- 히트맵 팝업 추가 -->
+<div id="hitmapPopup" class="popup-container" style="display: block;">
+    <div class="popup-content">
+        <span class="close-popup-black" onclick="closehitmapPopup()">&times;</span>
+        <iframe id="hitmapFrame" src="/hitmap" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+</div>
+<!-- test2 팝업 -->
+<div id="testPopup" class="popup-container" style="display: none;">
+<div class="popup-content">
+    <span class="close-popup" onclick="closeTest2Popup()">&times;</span>
+    <iframe id="testFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+</div>
+
+
+
+<script>
+    $(document).ready(function() {
+        // 버튼 클릭 또는 엔터키 입력 감지
+        $('#sendBtn').click(sendMessage);
+        $('#chat-input').keydown(function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // 기본 Enter 동작 방지
+                sendMessage(); // 메시지 전송 함수 호출
+            }
+        });
+    });
+
+    // 메시지 전송 함수
+    function sendMessage() {
+        const userInput = $('#chat-input').val();
+        if (!userInput) return; // 입력 필드가 비어있으면 종료
+        
+        // 사용자 입력 메시지를 채팅창에 추가
+        appendMessage('user-message', userInput);
+        
+        // 입력 필드를 초기화
+        $('#chat-input').val('');
+
+        // 로딩 스피너 보여주기
+        $('#loadingSpinner').show();
+
+        $.ajax({
+            url: '/chat',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ input: userInput }),
+            success: function(response) {
+                console.log(response[0]); // 추가된 부분: response[0]을 콘솔에 출력
+                if (response[1].image ) {
+                    const downloadLinkPattern = /(https?:\/\/[^\s]+)/g;
+                    if(response[0].includes('펀드 정보 다운로드')){
+                        response[0] = response[0].replace(/[()]/g, ''); // 문자열 내의 모든 괄호 제거
+                        const downloadLinkMatches = response[0].match(downloadLinkPattern); // 모든 링크 찾기
+                        if (downloadLinkMatches) {
+                            response[0] = response[0].replace(downloadLinkPattern, (match) => `<a href="${match}" target="_blank">${match} </a>`); // 모든 링크를 HTML 링크로 변경
+                        }
+                    }
+                    appendMessage('bot-message', response[0]);
+                    // 이미지 요소 생성
+                    const imgElement = document.createElement('img');
+                    imgElement.src = 'data:image/png;base64,' + response[1].image;
+                    imgElement.style.maxWidth = '400px'; // 최대 너비 설정
+                    imgElement.style.maxHeight = '300px'; // 최대 높이 설정
+                    // 이미지 메시지를 appendMessage에 추가
+                    appendImageMessage('bot-message', imgElement);
+
+                } else {
+                    // riskfolio 외의 출력 
+                    appendMessage('bot-message', response);
+                }
+            },
+            error: function() {
+                appendMessage('bot-message', '에러가 발생했습니다.');
+            },
+            complete: function() {
+                $('#loadingSpinner').hide();
+            }
+        });
+    }
+
+    // string  보내기
+    function appendMessage(type, message) {
+        const chatContainer = document.getElementById('chat-container');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', type);
+
+
+        // message가 null 또는 undefined인 경우 콘솔에 출력
+        if (message == null) {
+            console.log('메시지가 null 또는 undefined입니다.'); // 변경된 부분
+        }
+
+            // 줄바꿈 문자를 <br> 태그로 변환
+        const formattedMessage = message.replace(/\n/g, '<br>');
+        messageElement.innerHTML = formattedMessage; // innerHTML을 사용하여 줄바꿈 표시
+        
+        chatContainer.appendChild(messageElement);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+
+    // 이미지  보내기
+    function appendImageMessage(type, imgElement) {
+        const chatContainer = document.getElementById('chat-container');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', type);
+
+        // 이미지 클릭 시 확대 기능 추가
+        imgElement.style.cursor = 'pointer'; // 커서를 포인터로 변경
+        imgElement.addEventListener('click', function() {
+            const overlay = document.getElementById('overlay');
+            const enlargedImage = document.getElementById('enlargedImage');
+            enlargedImage.src = imgElement.src; // 클릭한 이미지의 src를 확대 이미지의 src에 설정
+            overlay.style.display = 'flex'; // 오버레이 보기
+        });
+
+        messageElement.appendChild(imgElement); // 이미지 요소를 메시지에 추가
+        chatContainer.appendChild(messageElement);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    // 오버레이 클릭 시 숨기기
+    const overlay = document.getElementById('overlay');
+    overlay.addEventListener('click', function() {
+        overlay.style.display = 'none'; // 오버레이 숨기기
+    });
+
+    function openAccountModal() {
+        const username = localStorage.getItem('username'); // 로컬 스토리지에서 사용자 이름 가져오기
+        if (!username) {
+            alert('사용자가 로그인되어 있지 않습니다.'); // 사용자 이름이 없으면 경고
+            return;
+        }
+        // API 호출하여 사용자 정보 가져오기
+        $.ajax({
+            url: `/api/account?username=${username}`,
+            method: 'GET',
+            success: function(data) {
+                // 사용자 정보를 모달에 표시
+                document.getElementById('account-username').textContent = data.username;
+                document.getElementById('account-email').textContent = data.email;
+                document.getElementById('account-risk-Level').textContent = data.riskLevelText;
+                document.getElementById('account-modal').style.display = 'block';
+                document.getElementById('account-modal-background').style.display = 'block';
+            },
+            error: function() {
+                alert('계정 정보를 가져오는 중 오류가 발생했습니다.');
+            }
+        });
+    }
+    // 계정정보 모달 닫기
+    function closeAccountModal() {
+        document.getElementById('account-modal').style.display = 'none';
+        document.getElementById('account-modal-background').style.display = 'none';
+    }
+    // 로그아웃
+    function logout() {
+        localStorage.removeItem('username'); // 로컬 스토리지에서 사용자 이름 제거
+        window.location.href = '/'; // 홈 페이지로 리디렉션
+    }
+
+
+
+
+    // iframe에서 메시지를 받는 이벤트 리스너 추가
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'riskLevelText') {
+            const riskLevelDiv = document.getElementById('risk-level-result');
+            riskLevelDiv.textContent = `투자성향: ${event.data.riskLevelText}`;
+            riskLevelDiv.style.display = 'block';
+            document.getElementById('testPopup').style.display = 'none';
+        }
+    });
+
+    // test2팝업 열기
+    document.querySelector('.assessment-button').addEventListener('click', function() {
+        const popup = document.getElementById('testPopup');
+        const frame = document.getElementById('testFrame');
+        frame.src = '/test2';
+        popup.style.display = 'block';
+    });
+    //test2 팝업닫기
+    function closeTest2Popup() {
+        document.getElementById('testPopup').style.display = 'none';
+    }
+
+
+
+    // hitmap 열기
+    document.getElementById('hitmap-button').addEventListener('click', function() {
+        const popup = document.getElementById('hitmapPopup');
+        const frame = document.getElementById('hitmapFrame');
+        frame.src = '/hitmap';
+        popup.style.display = 'block';
+    });
+    // 히트맵팝업 닫기 함수
+    function closehitmapPopup() {
+        document.getElementById('hitmapPopup').style.display = 'none';
+  	}
+
+
+    
+    // 모달 배경 숨기   
+    function closeModal() {
+        document.getElementById('modal-background').style.display = 'none'; 
+    }
+    // 팝업의 닫기 버튼 이벤트
+    document.querySelector('.close-popup').addEventListener('click', function() {
+        document.getElementById('testPopup').style.display = 'none';
+    });
+    ////////////////////////////////
+    // 사이드바, 설정 관련 함수들
+    function openSidebar() {
+        document.getElementById('sidebar').style.width = '250px';
+        document.querySelector('.main').style.marginLeft = '250px';
+    }
+    
+    function closeSidebar() {
+        document.getElementById('sidebar').style.width = '0';
+        document.querySelector('.main').style.marginLeft = '0';
+    }
+
+    function openSettings() {
+        document.getElementById('settings-modal').style.display = 'block';
+        document.getElementById('modal-background').style.display = 'block';
+    }
+
+    function closeSettings() {
+        document.getElementById('settings-modal').style.display = 'none';
+        document.getElementById('modal-background').style.display = 'none';
+    }
+
+    function toggleDarkMode() {
+        const isDarkMode = document.getElementById('dark-mode-toggle').checked;
+        if (isDarkMode) {
+            document.body.style.backgroundColor = '#000';
+            document.body.style.color = '#fff';
+        } else {
+            document.body.style.backgroundColor = '#fff';
+            document.body.style.color = '#000';
+        }
+    }
+
+    function changeFontSize() {
+        const fontSize = document.getElementById('font-size-select').value;
+        document.body.style.fontSize = fontSize;
+    }
+
+    function changeThemeColor() {
+        const themeColor = document.getElementById('theme-color-input').value;
+        document.querySelector('.header').style.color = themeColor;
+        document.querySelector('.send-btn').style.backgroundColor = themeColor;
+        document.querySelector('.slide-btn').style.color = themeColor;
+    }
+
+
+
+    // 사용자 이름을 서버로 전송
+    document.getElementById("fundad-link").addEventListener("click", async (event) => {
+        event.preventDefault(); // 기본 링크 동작 방지
+        const username = localStorage.getItem('username'); // 로컬 스토리지에서 사용자 이름 가져오기
+        if (username) {
+            await sendUsernameToServer(username); // 사용자 이름을 서버로 전송
+        }
+    });
+        // 페이지가 로드될 때 사용자 이름을 서버로 전송
+    window.addEventListener('load', async () => {
+        const username = localStorage.getItem('username'); // 로컬 스토리지에서 사용자 이름 가져오기
+        if (username) {
+            await sendUsernameToServer(username); // 사용자 이름을 서버로 전송
+        }
+    });
+    // 새로운 AJAX 요청: 로컬 스토리지의 username을 서버로 전송
+    async function sendUsernameToServer(username) {
+        try {
+            const response = await fetch('/api/username', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username }) // 사용자 이름 포함
+            });
+
+            if (response.ok) {
+                console.log('사용자 이름이 서버로 전송되었습니다.');
+            } else {
+                console.error('사용자 이름 전송 중 오류 발생');
+            }
+        } catch (error) {
+            console.error('AJAX 요청 중 오류 발생:', error);
+        }
+    }
+    </script>
+
+</body>
+</html>

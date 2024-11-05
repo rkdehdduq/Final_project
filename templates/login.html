@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 80%;
+            height: 80vh;
+        }
+
+        .left-side {
+            width: 65%;
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px 0 0 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding-top: 90px; /* 위쪽 패딩을 조정하여 아래로 내림 */
+        }
+
+        .right-side {
+            width: 35%;
+            background-color: #444;
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* 세로 상단에 정렬 */
+            padding-top: 40px; /* 원하는 만큼 위로 올림 */
+        }
+
+        .left-side h2 {
+            text-align: left; /* 왼쪽 정렬 */
+            color: #007bff; /* 파란색으로 설정 */
+            font-size: 70px; /* 크기 증가 */
+        }
+
+        .right-side h2 {
+            text-align: center; /* 중앙 정렬 */
+            color: #007bff; /* 파란색으로 설정 */
+            margin-bottom: 20px; /* 아래 여백 추가 */
+        }
+
+        .left-side p {
+            text-align: left; /* 왼쪽 정렬 */
+            margin-top: 20px;
+            font-size: 20px; /* 설명문구 크기 조정 */
+        }
+
+        .login-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .login-container input[type="text"],
+        .login-container input[type="password"] {
+            width: 90%;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .button-container {
+            text-align: center; /* 버튼을 가운데 정렬 */
+            margin-top: 20px; /* 버튼 위에 여백 추가 */
+        }
+
+        .login-container button {
+            width: 70%; /* 너비를 100%로 설정하여 중앙 정렬 */
+            padding: 8px 20px;
+            background-color: #007bff; /* 파란색 배경 */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block; /* 중앙 배치를 위해 inline-block 사용 */
+        }
+
+        .login-container button:hover {
+            background-color: #0056b3; /* 버튼 hover 색상 */
+        }
+
+        .create-account {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .create-account a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .create-account a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-side">
+            <h2>FundAd</h2>
+            <p id="description"></p>
+        </div>
+        <div class="right-side">
+            <h2>Login</h2>
+            <div class="login-container">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter your username">
+                
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+                
+                <div class="button-container">
+                    <button id="login-btn" type="button">Login</button>
+                </div>
+                
+                <div class="create-account">
+                    <a href="/signin">새로운 계정 만들기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+   
+    <script>
+        const descriptionElement = document.getElementById("description");
+        const descriptionText = "개인의 투자 목표에 맞춰 최적의 펀드를 추천합니다.";
+        let index = 0;
+    
+        function typeEffect() {
+            if (index < descriptionText.length) {
+                descriptionElement.innerHTML += descriptionText.charAt(index);
+                index++;
+                setTimeout(typeEffect, 100);
+            }
+        }
+    
+        typeEffect();
+    
+        document.getElementById("login-btn").addEventListener("click", async () => {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message); // 로그인 성공 메시지
+                    localStorage.setItem('username', username); // 사용자 이름을 로컬 스토리지에 저장
+
+                    // 사용자 이름을 서버로 전송
+                    await sendUsernameToServer(username);
+
+                    window.location.href = '/index'; // 로그인 성공 후 리디렉션할 페이지
+                } else {
+                    alert(data.error); // 오류 메시지
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('로그인 중 오류가 발생했습니다.');
+            }
+        });
+
+        // 새로운 AJAX 요청: 로컬 스토리지의 username을 서버로 전송
+        async function sendUsernameToServer(username) {
+            try {
+                const response = await fetch('/api/username', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username }) // 사용자 이름 포함
+                });
+
+                if (response.ok) {
+                    console.log('사용자 이름이 서버로 전송되었습니다.');
+                } else {
+                    console.error('사용자 이름 전송 중 오류 발생');
+                }
+            } catch (error) {
+                console.error('AJAX 요청 중 오류 발생:', error);
+            }
+        }
+</script>
+    
+    </body>
+    </html>

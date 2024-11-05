@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <h2>히트맵</h2>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div id="hitmap-container">
+        <!-- 히트맵 이미지를 여기에 추가할 예정 -->
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $.ajax({
+                url: '/show_hitmap',
+                method: 'GET',
+                success: function(hitmap) {
+                    console.log(hitmap[0]); // hitmap[0] 값을 콘솔에 출력
+
+                    // 첫 번째 이미지 추가
+                    const imgElement1 = document.createElement('img');
+                    imgElement1.src = 'data:image/png;base64,' + hitmap[0];
+                    imgElement1.style.maxWidth = '400px'; // 최대 너비 설정
+                    imgElement1.style.maxHeight = '300px'; // 최대 높이 설정
+                    $('#hitmap-container').append(imgElement1);
+
+                    // 두 번째 이미지 추가
+                    const imgElement2 = document.createElement('img');
+                    imgElement2.src = 'data:image/png;base64,' + hitmap[1];
+                    imgElement2.style.maxWidth = '400px'; // 최대 너비 설정
+                    imgElement2.style.maxHeight = '300px'; // 최대 높이 설정
+                    $('#hitmap-container').append(imgElement2);
+                },
+                error: function() {
+                    $('#hitmap-container').append('<p>에러가 발생했습니다.</p>');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
